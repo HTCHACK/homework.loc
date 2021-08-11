@@ -22,6 +22,11 @@ class Product extends Model
     return $this->belongsToMany(Material::class,'product_material', 'product_id', 'material_id')->withPivot('quantity')->withTimestamps();
     }
 
+    public function productMaterials()
+    {
+        return $this->hasMany(ProductMaterial::class);
+    }
+
     protected function serializeDate(DateTimeInterface $date)
     {
         return $date->format('Y-m-d H:i:s');

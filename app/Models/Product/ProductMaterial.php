@@ -8,6 +8,7 @@ use App\Models\Material\Material;
 use App\Models\Product\Product;
 use DateTimeInterface;
 use App\Models\WareHouseMaterial\WareHouse;
+use App\Models\WareHouseMaterial\WareHouseMaterial;
 
 class ProductMaterial extends Model
 {
@@ -15,6 +16,17 @@ class ProductMaterial extends Model
 
     protected $table = 'product_material';
     protected $guarded = [''];
+
+
+    public function warehouseMaterials()
+    {
+        return $this->hasMany(WareHouseMaterial::class,'material_id');
+    }
+
+    public function products()
+    {
+        return $this->hasMany(Product::class);
+    }
 
     protected function serializeDate(DateTimeInterface $date)
     {

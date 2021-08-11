@@ -30,7 +30,7 @@ class BuyMaterialRequest extends FormRequest
 
             'date'=>[
 
-                'date_format:d-m-Y' 
+                'required' 
 
             ],
 

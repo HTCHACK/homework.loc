@@ -12,12 +12,12 @@ class MaterialController extends Controller
     public function __construct()
     {   
 
-        $this->middleware('auth:api');
-        $this->middleware('permissions:material_access')->only('index');
-        $this->middleware('permissions:material_create')->only('store');
-        $this->middleware('permissions:material_show')->only('show');
-        $this->middleware('permissions:material_update')->only('update');
-        $this->middleware('permissions:material_delete')->only('destroy');
+        // $this->middleware('auth:api');
+        // $this->middleware('permissions:material_access')->only('index');
+        // $this->middleware('permissions:material_create')->only('store');
+        // $this->middleware('permissions:material_show')->only('show');
+        // $this->middleware('permissions:material_update')->only('update');
+        // $this->middleware('permissions:material_delete')->only('destroy');
 
     }
 

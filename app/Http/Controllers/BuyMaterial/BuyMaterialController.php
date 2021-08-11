@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\BuyMaterial;
 
-use Illuminate\Support\Facades\DB;  
+use Illuminate\Support\Facades\DB;
 use App\Http\Requests\BuyMaterialRequest;
 use App\Models\BuyMaterial\BuyMaterial;
 use App\Http\Controllers\Controller;
@@ -15,7 +15,7 @@ use App\Models\CounterAgency;
 class BuyMaterialController extends Controller
 {
     public function __construct()
-    {   
+    {
 
         // $this->middleware('auth:api');
         // $this->middleware('permissions:buy_material_access')->only('index');
@@ -33,16 +33,19 @@ class BuyMaterialController extends Controller
     {
         //First Way
         $buyMaterials = BuyMaterial::query()
-        ->select('buy_material.*',DB::raw('sum(buying_material_item.quantity * buying_material_item.price) as total'),
-        DB::raw('counter_agencies.name as agency'))
-        ->leftJoin('buying_material_item', function ($join) {
-            $join->on('buy_material.id','=','buying_material_item.buy_material_id');
-        })
-        ->leftJoin('counter_agencies', function ($join) {
-            $join->on('buy_material.counter_agency_id','=','counter_agencies.id');
-        })
-        ->groupBy('buy_material.id') 
-        ->get();
+            ->select(
+                'buy_material.*',
+                DB::raw('sum(buying_material_item.quantity * buying_material_item.price) as total'),
+                DB::raw('counter_agencies.name as agency')
+            )
+            ->leftJoin('buying_material_item', function ($join) {
+                $join->on('buy_material.id', '=', 'buying_material_item.buy_material_id');
+            })
+            ->leftJoin('counter_agencies', function ($join) {
+                $join->on('buy_material.counter_agency_id', '=', 'counter_agencies.id');
+            })
+            ->groupBy('buy_material.id')
+            ->get();
 
         //Second Way
 
@@ -55,7 +58,7 @@ class BuyMaterialController extends Controller
         // ->whereColumn('buying_material_item.buy_material_id', 'buy_material.id')
         //  ])->get();
 
-        return response()->json(['all'=>$buyMaterials]);
+        return response()->json(['all' => $buyMaterials]);
     }
 
     /**
@@ -66,20 +69,20 @@ class BuyMaterialController extends Controller
      */
     public function store(BuyMaterialRequest $request)
     {
-        $buyMaterial = BuyMaterial::create($request->all());    
-        
-        $buyMaterialItems = collect($request->items)->map(fn($buyMaterialItem) => [
+        $buyMaterial = BuyMaterial::create($request->all());
+
+        $buyMaterialItems = collect($request->items)->map(fn ($buyMaterialItem) => [
             "material_id" => $buyMaterialItem['material_id'],
-            "price"=>$buyMaterialItem['price'],
+            "price" => $buyMaterialItem['price'],
             "quantity" => $buyMaterialItem['quantity']
         ]);
-        
+
 
         $buyMaterial->materials()->attach($buyMaterialItems);
 
-        $total = BuyingMaterialItem::select(DB::raw('sum(quantity * price) as total'))->whereIn('buy_material_id',$buyMaterial)->get();
+        $total = BuyingMaterialItem::select(DB::raw('sum(quantity * price) as total'))->whereIn('buy_material_id', $buyMaterial)->get();
 
-        return response()->json(['created'=>'Successfully Created','total'=>$total]);
+        return response()->json(['created' => 'Successfully Created', 'total' => $total]);
     }
 
     /**
@@ -89,19 +92,19 @@ class BuyMaterialController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function show($id)
-    {   
+    {
 
-        $show = BuyMaterial::addSelect(['total' => BuyingMaterialItem::select(DB::raw('SUM(buying_material_item.quantity * buying_material_item.price)'))
-        ->whereColumn('buying_material_item.buy_material_id', 'buy_material.id'),
-        'agency' => CounterAgency::select(DB::raw('counter_agencies.name'))
-        ->whereColumn('counter_agencies.id', 'buy_material.counter_agency_id')
+        $show = BuyMaterial::addSelect([
+            'total' => BuyingMaterialItem::select(DB::raw('SUM(buying_material_item.quantity * buying_material_item.price)'))
+                ->whereColumn('buying_material_item.buy_material_id', 'buy_material.id'),
+            'agency' => CounterAgency::select(DB::raw('counter_agencies.name'))
+                ->whereColumn('counter_agencies.id', 'buy_material.counter_agency_id')
         ])
-        ->find($id);  
+            ->find($id);
 
         //$show = $show = BuyMaterial::with('materials')->find($id);
 
-        return response()->json(['one'=>$show]);
-        
+        return response()->json(['one' => $show]);
     }
 
     /**
@@ -112,18 +115,17 @@ class BuyMaterialController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function update(BuyMaterialRequest $request, BuyMaterial $buyMaterial)
-    {   
+    {
 
         $data = $request->validated();
-       
-        $buyMaterial->update($data);    
+
+        $buyMaterial->update($data);
 
         $buyMaterial->materials()->sync($this->buyMaterialItems($data['items']));
 
-        $total = BuyingMaterialItem::select(DB::raw('sum(quantity * price) as total'))->whereIn('buy_material_id',$buyMaterial)->get();
+        $total = BuyingMaterialItem::select(DB::raw('sum(quantity * price) as total'))->whereIn('buy_material_id', $buyMaterial)->get();
 
-        return response()->json(['updatd'=>'Successfully Updated']);
-
+        return response()->json(['updatd' => 'Successfully Updated']);
     }
 
     private function buyMaterialItems($items)
@@ -131,10 +133,10 @@ class BuyMaterialController extends Controller
         return collect($items)->mapWithKeys(function ($buyMaterialItem) {
             return [
                 $buyMaterialItem['material_id'] => [
-                    "price"=>$buyMaterialItem['price'],
+                    "price" => $buyMaterialItem['price'],
                     "quantity" => $buyMaterialItem['quantity']
                 ]
-            ];  
+            ];
         });
     }
 
@@ -148,79 +150,81 @@ class BuyMaterialController extends Controller
     {
         BuyMaterial::destroy($id);
 
-        return response()->json(['deleted'=>'Buy Material Successfully Deleted']);
+        return response()->json(['deleted' => 'Buy Material Successfully Deleted']);
     }
 
 
     public function getItem($id)
-    {   
+    {
         $getItem = BuyingMaterialItem::query()
-        ->select('buying_material_item.quantity','buying_material_item.material_id','buying_material_item.id','buying_material_item.price',     
-        DB::raw('buying_material_item.quantity - SUM(warehouse_materials.recieve) as lack'),
-        DB::raw('materials.name as material'))
-        ->leftJoin('warehouse_materials', function ($join) {
-            $join->on('buying_material_item.id','=','warehouse_materials.warehouse_materialable_id');
-            $join->where('warehouse_materials.warehouse_materialable_type','buying_material_item');
-        })      
-        ->leftJoin('materials', function ($join) {
-            $join->on('buying_material_item.material_id','=','materials.id');
-        })
-        ->groupBy('warehouse_materials.warehouse_materialable_id')
-        ->groupBy('buying_material_item.id') 
-        ->where('buying_material_item.buy_material_id',$id)
-        ->get();
+            ->select(
+                'buying_material_item.material_id',
+                'buying_material_item.quantity',
+                'buying_material_item.id',
+                'buying_material_item.price',
+                DB::raw('buying_material_item.quantity - SUM(warehouse_materials.recieve) as lack'),
+                DB::raw('materials.name as material')
+            )
+            ->leftJoin('warehouse_materials', function ($join) {
+                $join->on('buying_material_item.id', '=', 'warehouse_materials.warehouse_materialable_id');
+                $join->where('warehouse_materials.warehouse_materialable_type', 'buying_material_item');
+            })
+            ->leftJoin('materials', function ($join) {
+                $join->on('buying_material_item.material_id', '=', 'materials.id');
+            })
+            ->groupBy('warehouse_materials.warehouse_materialable_id')
+            ->groupBy('buying_material_item.id')
+            ->where('buying_material_item.buy_material_id', $id)
+            ->get();
 
-        return response()->json(['getItem'=>$getItem]);    
+        return response()->json(['getItem' => $getItem]);
     }
 
-    public function getItemhistory($id) 
+    public function getItemhistory($id)
     {
 
         $getItemhistory = WareHouseMaterial::query()
-        ->select('warehouse_materials.*',
-        DB::raw('DATEDIFF(current_date, warehouse_materials.created_at)  as days_in_warehouse'),
-        DB::raw('ware_houses.name as warehouse'),
-        DB::raw('materials.name as material'))
-        ->leftJoin('buying_material_item', function ($join) {
-            $join->on('warehouse_materials.warehouse_materialable_id','=','buying_material_item.id');
-        })
-        ->leftJoin('ware_houses', function ($join) {
-            $join->on('warehouse_materials.ware_house_id','=','ware_houses.id');
-        })
-        ->leftJoin('materials', function ($join) {
-            $join->on('warehouse_materials.material_id','=','materials.id');
-        })
-        ->where('buying_material_item.buy_material_id',$id)
-        ->with('warehouse_materialable')
-        ->get();
+            ->select(
+                'warehouse_materials.*',
+                DB::raw('DATEDIFF(current_date, warehouse_materials.created_at)  as days_in_warehouse'),
+                DB::raw('ware_houses.name as warehouse'),
+                DB::raw('materials.name as material')
+            )
+            ->leftJoin('buying_material_item', function ($join) {
+                $join->on('warehouse_materials.warehouse_materialable_id', '=', 'buying_material_item.id');
+            })
+            ->leftJoin('ware_houses', function ($join) {
+                $join->on('warehouse_materials.ware_house_id', '=', 'ware_houses.id');
+            })
+            ->leftJoin('materials', function ($join) {
+                $join->on('warehouse_materials.material_id', '=', 'materials.id');
+            })
+            ->where('buying_material_item.buy_material_id', $id)
+            ->with('warehouse_materialable')
+            ->get();
 
-        return response()->json(['getItemhistory'=>$getItemhistory]);
-    }   
-    
+        return response()->json(['getItemhistory' => $getItemhistory]);
+    }
+
 
     public function send(BuyMaterialItemRequest $request)
-    {       
+    {
         // $id = $request->buy_material_id;
         // $buyMaterial = BuyMaterial::find($id);
         // $buyMaterialItems = BuyingMaterialItem::where('buy_material_id',$buyMaterial)->get();
-        
-        foreach($request->warehouse_materials as $key=>$value)
-        {                  
-                                                  
-            WareHouseMaterial::create([
-                'material_id'=>$value['material_id'],
-                'ware_house_id'=>$value['ware_house_id'],
-                'recieve'=>$value['recieve'],
-                'reminder'=>$value['recieve'],
-                'buy_price'=>$value['price'],
-                'warehouse_materialable_id'=>$value['warehouse_materialable_id'],
-                'warehouse_materialable_type'=>'buying_material_item'
-            ]);                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
-        }   
 
-        return response()->json(['success'=>'Successfully Created']);
+        foreach ($request->warehouse_materials as $key => $value) {
+            $warehouse_materials = WareHouseMaterial::create([
+                'material_id' => $value['material_id'],
+                'warehouse_materialable_id' => $value['id'],
+                'buy_price' => $value['price'],
+                'recieve' => $value['recieve'],
+                'reminder' => $value['recieve'],
+                'ware_house_id' => $value['ware_house_id'],
+                'warehouse_materialable_type' => 'buying_material_item'
+            ]);
+        }
 
+        return response()->json(['warehouse_materials' => $warehouse_materials]);
     }
-
-                        
 }

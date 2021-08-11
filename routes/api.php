@@ -4,6 +4,7 @@ use App\Http\Controllers\BuyMaterial\BuyMaterialController;
 use App\Http\Controllers\ApiAuthorization\LoginController;
 use App\Http\Controllers\Materials\MaterialController;
 use App\Http\Controllers\Products\ProductController;
+use App\Http\Controllers\WareHouse\WareHouseMaterialsController;
 use App\Http\Controllers\Role\SuperAdminController;
 use App\Http\Controllers\Role\DirectorController;
 use App\Http\Controllers\CounterAgencyController;
@@ -38,12 +39,16 @@ Route::apiResource('products', ProductController::class);
 Route::apiResource('counter_agencies',CounterAgencyController::class);
 Route::apiResource('ware_houses',WareHouseController::class);
 Route::apiResource('buy_material', BuyMaterialController::class);
+Route::apiResource('warehouse_materials', WareHouseMaterialsController::class);
 
 Route::get('getItem/{id}', [BuyMaterialController::class, 'getItem']);
 Route::get('getItemhistory/{id}', [BuyMaterialController::class, 'getItemhistory']);
 Route::post('buy_material/send', [BuyMaterialController::class, 'send']);
 
 Route::get('ware_houses', [WareHouseController::class, 'index']);
+
+Route::get('costRate', [ProductController::class, 'costRate']);
+Route::post('report', [ProductController::class, 'report']);
 
 // Route::group(['prefix'=>'/super-admin'], function () {
 //     Route::get('/',[SuperAdminController::class,'index']);
