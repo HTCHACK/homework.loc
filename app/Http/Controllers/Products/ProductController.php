@@ -27,13 +27,6 @@ class ProductController extends Controller
 
     }
 
-    //     Asadbek Xalimjonv, [10.08.21 22:51]
-    // product_material : material_id, quantity, product_id , 
-    // warehouse dan material_id buy_price va warehouse_id ,
-
-    // Asadbek Xalimjonv, [10.08.21 22:55]
-    // material_id boyicha reminder ni hisoblayman
-
     public function index()
     {
 
@@ -44,50 +37,43 @@ class ProductController extends Controller
 
     public function costRate()
     {
-        // SELECT products.name, products.id, product_material.material_id , 
-        // product_material.quantity , warehouse_materials.buy_price , warehouse_materials.ware_house_id 
-        // FROM products JOIN product_material ON products.id = product_material.product_id 
-        // JOIN materials ON product_material.material_id = materials.id 
-        // JOIN warehouse_materials on product_material.material_id = warehouse_materials.material_id
-        // WHERE products.id = 2;
-
-
-
-        $product_id = 3;
-        $quantity = 4;
-
-        $calculate = ProductMaterial::query()
-            ->select(
-                'product_material.*',
-                DB::raw('warehouse_materials.buy_price as price'),
-                DB::raw('product_material.quantity as quantity'),
-                DB::raw('SUM(warehouse_materials.reminder)'),
-                DB::raw('materials.name as material'),
-                DB::raw('products.name as product'),
-                DB::raw('ware_houses.name as warehouse'),
-                DB::raw('SUM(warehouse_materials.reminder)')
-            )
-            ->join('materials', 'product_material.material_id', '=', 'materials.id')
-            ->join('warehouse_materials', 'product_material.material_id', '=', 'warehouse_materials.material_id')
-            ->join('products', 'product_material.product_id', '=', 'products.id')
-            ->join('ware_houses', 'warehouse_materials.ware_house_id', '=', 'ware_houses.id')
-            ->groupBy('product_material.product_id')
-            ->groupBy('warehouse_materials.material_id')
-            ->orderBy('warehouse_materials.material_id', 'asc')
-            ->where('product_material.product_id', $product_id)
-            ->get();
-
-        return response()->json([
-            'calculate' => $calculate,
-            'success' => true
-        ]);
     }
 
     public function report(Request $request)
-    {
-        foreach($request->products as $key=>$value)
-        {
+    {   
+        $sale = $request->sales;
+        foreach ($request->sales as $key => $value) {
 
+            $product_id = $request->id;
+            $quantity = $request->quantity;
+            
+            $calculate = ProductMaterial::query()
+                ->select(
+                    'product_material.*',
+                    DB::raw('warehouse_materials.buy_price as price'),
+                    DB::raw('product_material.quantity as quantity'),
+                    DB::raw('SUM(warehouse_materials.reminder)'),
+                    DB::raw('materials.name as material'),
+                    DB::raw('products.name as product'),
+                    DB::raw('ware_houses.name as warehouse'),
+                    DB::raw('SUM(warehouse_materials.reminder)')
+                )
+                ->join('materials', 'product_material.material_id', '=', 'materials.id')
+                ->join('warehouse_materials', 'product_material.material_id', '=', 'warehouse_materials.material_id')
+                ->join('products', 'product_material.product_id', '=', 'products.id')
+                ->join('ware_houses', 'warehouse_materials.ware_house_id', '=', 'ware_houses.id')
+                ->groupBy('product_material.product_id')
+                ->groupBy('warehouse_materials.material_id')
+                ->orderBy('warehouse_materials.material_id', 'asc')
+                ->where('product_material.product_id', $product_id)
+                ->get();
+
+
+            return response()->json([
+                'calculate' => $calculate,
+                'sales'=>$sale,
+                'success' => true
+            ]);
         }
     }
 

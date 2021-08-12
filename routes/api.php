@@ -48,7 +48,7 @@ Route::post('buy_material/send', [BuyMaterialController::class, 'send']);
 Route::get('ware_houses', [WareHouseController::class, 'index']);
 
 Route::get('costRate', [ProductController::class, 'costRate']);
-Route::post('report', [ProductController::class, 'report']);
+Route::post('sales/report', [ProductController::class, 'report']);
 
 // Route::group(['prefix'=>'/super-admin'], function () {
 //     Route::get('/',[SuperAdminController::class,'index']);

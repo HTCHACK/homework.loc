@@ -17,10 +17,12 @@ class CreateBuyingMaterialItemTable extends Migration
             $table->id();
             $table->unsignedBigInteger('buy_material_id');
             $table->unsignedBigInteger('material_id');
+            $table->unsignedBigInteger('ware_house_id')->nullable();
             $table->foreign('buy_material_id')->references('id')->on('buy_material')->onDelete('cascade');
             $table->foreign('material_id')->references('id')->on('materials')->onDelete('cascade');
-            $table->string('quantity')->nullable(); 
-            $table->string('price')->nullable();
+            $table->foreign('ware_house_id')->references('id')->on('ware_houses')->onDelete('cascade');
+            $table->bigInteger('quantity')->nullable(); 
+            $table->bigInteger('price')->nullable();
             $table->timestamps();
         });
     }

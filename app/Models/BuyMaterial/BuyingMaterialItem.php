@@ -35,5 +35,9 @@ class BuyingMaterialItem extends Model
     {
         return $date->format('Y-m-d H:i');
     }
+
+    protected $casts = [
+        'lack' => 'integer',
+    ];
     
 }

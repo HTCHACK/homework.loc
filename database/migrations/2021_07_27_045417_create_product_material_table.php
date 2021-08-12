@@ -19,7 +19,7 @@ class CreateProductMaterialTable extends Migration
             $table->unsignedBigInteger('material_id');
             $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
             $table->foreign('material_id')->references('id')->on('materials')->onDelete('cascade');
-            $table->string('quantity')->nullable();
+            $table->bigInteger('quantity')->nullable();
             $table->timestamps();
         });
     }
