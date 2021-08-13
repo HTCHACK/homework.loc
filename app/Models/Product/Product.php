@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Product\ProductMaterial;
 use App\Models\User;
+use App\Models\WareHouseMaterial\WareHouse;
 use DateTimeInterface;
 
 class Product extends Model
@@ -25,6 +26,11 @@ class Product extends Model
     public function productMaterials()
     {
         return $this->hasMany(ProductMaterial::class);
+    }
+
+    public function warehouses()
+    {
+        return $this->hasMany(WareHouse::class);
     }
 
     protected function serializeDate(DateTimeInterface $date)

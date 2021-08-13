@@ -10,7 +10,7 @@ use App\Models\Product\ProductMaterial;
 use App\Models\Sales\Sale;
 use Illuminate\Http\Request;
 use App\Http\Requests\SaleRequest;
-
+use App\Models\WareHouseMaterial\WareHouseMaterial;
 
 class ProductController extends Controller
 {
@@ -35,46 +35,122 @@ class ProductController extends Controller
         return response()->json(['all' => $all]);
     }
 
-    public function costRate()
+    public function productMaterials()
     {
+
+        $all = Product::with('productMaterials')->get();
+
+        return response()->json(['all' => $all]);
     }
 
-    public function report(Request $request)
-    {   
-        $sale = $request->sales;
-        foreach ($request->sales as $key => $value) {
+    public function report(SaleRequest $request)
+    {
+        // $values = collect($request->sales)->map(fn ($value) => [
+        //     'product_id' => $value['product_id'],
+        //     'quantity' => $value['quantity'],
+        //     'product_name' => Product::query()->select('products.name')->where('id',$value['product_id'])->get(),
+        //     $quantity = $value['quantity'],
 
-            $product_id = $request->id;
-            $quantity = $request->quantity;
-            
-            $calculate = ProductMaterial::query()
+        //     $qty = ProductMaterial::query()->select('product_material.*',DB::raw("product_material.quantity*'$quantity' as totalqty"),)
+        //     ->where('product_material.product_id', $value['product_id'])
+        //     ->get(),
+
+
+        //     'calculate' => ProductMaterial::query()
+        //         ->select(
+        //             'product_material.*',
+        //             DB::raw('warehouse_materials.buy_price as price'),
+        //             DB::raw("product_material.quantity as quantity"),
+        //             DB::raw('SUM(warehouse_materials.reminder) as totalreminder'),
+        //             DB::raw('materials.name as material'),
+        //             DB::raw("ware_houses.name as warehouse"),
+        //             DB::raw("product_material.quantity*'$quantity' as totalqty"),
+        //             DB::raw("product_material.quantity*'$quantity' - SUM(warehouse_materials.reminder)"),
+        //         )
+        //         ->join('materials', 'product_material.material_id', '=', 'materials.id')
+        //         ->join('warehouse_materials', 'product_material.material_id', '=', 'warehouse_materials.material_id')
+        //         ->join('products', 'product_material.product_id', '=', 'products.id')
+        //         ->join('ware_houses', 'warehouse_materials.ware_house_id', '=', 'ware_houses.id')
+        //         ->groupBy('product_material.product_id')
+        //         ->groupBy('warehouse_materials.material_id')
+        //         ->orderBy('warehouse_materials.material_id', 'asc')
+        //         ->orderBy('warehouse_materials.id', 'asc')
+        //         ->where('product_material.product_id', $value['product_id'])
+        //         ->get(),
+        // ]);
+
+
+        // return response()->json([
+        //     'result' => [
+        //         'data' => [
+        //             'report_product_materials' => [
+        //                 'product' => $values,
+        //             ],
+        //         ],
+
+        //         'success' => true
+        //     ],
+        // ]);
+
+        $reportData = [];
+
+        foreach ($request->sales as $key => $value) {
+            $product_id = $value['product_id'];
+            $quantity = $value['quantity'];
+            $warehouse = 'warehouse';
+
+            $qty = ProductMaterial::query()->select('product_material.quantity',DB::raw("product_material.quantity*'$quantity' as totalqty"),)
+            ->where('product_material.product_id', $value['product_id'])
+            ->get();
+
+            $warehouse_materials = WareHouseMaterial::query()->select('warehouse_materials.reminder',
+            'warehouse_materials.buy_price','warehouse_materials.material_id','warehouse_materials.ware_house_id'
+            )
+            ->join('product_material','warehouse_materials.material_id','=','product_material.material_id')
+            ->where('product_material.product_id',$value['product_id'])
+            ->get();
+
+
+            foreach($warehouse_materials as $key=>$wareId)
+            {
+
+                $reminderId = $wareId->reminder;
+                $calculate = ProductMaterial::query()
                 ->select(
                     'product_material.*',
                     DB::raw('warehouse_materials.buy_price as price'),
-                    DB::raw('product_material.quantity as quantity'),
-                    DB::raw('SUM(warehouse_materials.reminder)'),
                     DB::raw('materials.name as material'),
-                    DB::raw('products.name as product'),
-                    DB::raw('ware_houses.name as warehouse'),
-                    DB::raw('SUM(warehouse_materials.reminder)')
+                    DB::raw("ware_houses.name as warehouse"),
+                    DB::raw("(product_material.quantity*'$quantity') - '$reminderId'"),
                 )
                 ->join('materials', 'product_material.material_id', '=', 'materials.id')
                 ->join('warehouse_materials', 'product_material.material_id', '=', 'warehouse_materials.material_id')
                 ->join('products', 'product_material.product_id', '=', 'products.id')
                 ->join('ware_houses', 'warehouse_materials.ware_house_id', '=', 'ware_houses.id')
-                ->groupBy('product_material.product_id')
                 ->groupBy('warehouse_materials.material_id')
                 ->orderBy('warehouse_materials.material_id', 'asc')
-                ->where('product_material.product_id', $product_id)
+                ->orderBy('warehouse_materials.id', 'asc')
                 ->get();
+            }
+                    
 
-
-            return response()->json([
-                'calculate' => $calculate,
-                'sales'=>$sale,
-                'success' => true
+            array_push($reportData, [
+                'product' => [
+                    'value' => $value,
+                    'calculate'=>$calculate,
+                    'warehouse_materials'=>$warehouse_materials
+                ]
             ]);
         }
+
+        return response()->json([
+            'result' => [
+                'data' => [
+                    'report_product_materials' => $reportData,
+                ],
+                'success' => true
+            ],
+        ]); 
     }
 
     /**
