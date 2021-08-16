@@ -23,6 +23,11 @@ class ProductMaterial extends Model
         return $this->hasMany(WareHouseMaterial::class,'material_id');
     }
 
+    public function material()
+    {
+        return $this->belongsTo(Material::class,'material_id');
+    }
+
     public function products()
     {
         return $this->hasMany(Product::class);

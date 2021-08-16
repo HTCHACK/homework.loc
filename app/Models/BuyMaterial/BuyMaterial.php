@@ -22,7 +22,7 @@ class BuyMaterial extends Model
 
     public function agencies()
     {
-        return $this->belongsTo(CounterAgency::class);
+        return $this->belongsTo(CounterAgency::class,'counter_agency_id');
     }
 
     public function buyMaterialItem()

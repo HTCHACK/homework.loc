@@ -137,7 +137,7 @@ class ProductController extends Controller
                     DB::raw("product_material.quantity as quantity"),
                     DB::raw('SUM(warehouse_materials.reminder) as totalreminder'),
                     DB::raw('materials.name as material'),
-                    DB::raw("ware_houses.name as warehouse"),
+                    DB::raw('ware_houses.name as warehouse'),
                     DB::raw("product_material.quantity*'$quantity' as totalqty"),
                     DB::raw("warehouse_materials.reminder - product_material.quantity*'$quantity'"),
                 )
@@ -165,20 +165,44 @@ class ProductController extends Controller
                 'success' => true
             ],
         ]);
+
     }
 
-    public function status($status)
+
+
+
+    public function status($material_id)
     {
         $collect_data = [];
 
-        
+        $collect = WareHouseMaterial::query()->select('ware_house_id', 'material_id', 'reminder')
+            ->where('material_id', $material_id)->get();
 
-        array_push($collect_data, []);
+        $collect->groupBy('material_id')->flatMap(function ($items) {
+
+            $reminder = $items->sum('reminder');
+
+            return $items->map(function ($item) use ($reminder) {
+
+                $item->quantity = $reminder;
+
+                return $item;
+            });
+        });
+
+
+
+        array_push($collect_data, ['collect' => $collect]);
 
         return $collect_data;
     }
 
-    public function calculateMaterials($quantity, $product_id, $material_id)
+    public function lackReminder($quantity, $material_id)
+    {
+        
+    }
+
+    public function calculateProductMaterials($quantity, $product_id, $material_id)
     {
 
         $calculate_data = [];
@@ -187,17 +211,25 @@ class ProductController extends Controller
             'warehouse_materials.material_id',
             'warehouse_materials.ware_house_id',
             'warehouse_materials.reminder',
-            DB::raw('ware_houses.name as warehouse')
+            DB::raw("(*'$quantity')-warehouse_materials.reminder as lack_reminder")
         )
-            ->join('ware_houses', 'warehouse_materials.ware_house_id', '=', 'ware_houses.id')
-            ->where('material_id', $material_id)->get();
+            ->where('material_id', $material_id)
+            ->with('warehouses')
+            ->get();
 
-        $material = Material::query()
+        foreach($warehouse_materials as $warehouse_material)
+        {
+            $material = Material::query()
             ->select('id', 'name')
-            ->where('id', $material_id)->get();
+            ->where('id', $warehouse_material->material_id)->get();
+        }
 
+        $material->push(['warehouse_materials' => $warehouse_materials]);
+        
 
-        array_push($calculate_data, ['material' => $material, 'warehouse_materials' => $warehouse_materials]);
+        //$status = $this->status($material_id);
+
+        array_push($calculate_data, ['material' => $material]);
 
         return $calculate_data;
     }
@@ -205,7 +237,6 @@ class ProductController extends Controller
     public function getProductsWithMaterials($sales)
     {
         $products = [];
-
 
         foreach ($sales as $sale) {
 
@@ -217,10 +248,13 @@ class ProductController extends Controller
 
         $product = Product::where('id', $sale['product_id'])->select('id', 'name')->get();
 
+
         foreach ($product_materials as $product_material) {
 
-            $materials = $this->calculateMaterials($sale['quantity'], $product_material->product_id, $product_material->material_id);
+            $materials = $this->calculateProductMaterials($sale['quantity'],$product_material->product_id, $product_material->material_id);
         }
+
+        
 
         array_push(
 
@@ -240,6 +274,14 @@ class ProductController extends Controller
         return $products;
     }
 
+    public function getProducts()
+    {
+    }
+
+    public function calculateTotalMaterials()
+    {
+
+    }
 
     public function sale(Request $request)
     {
@@ -251,10 +293,15 @@ class ProductController extends Controller
             $products = $this->getProductsWithMaterials($sales);
         }
 
+        //$sale_product = $this->getProducts($products, $request);
+
+        //$total_materials = $this->calculateTotalMaterials($sale_product[0], $sale_product[1]);
+
         return response()->json([
             'result' => [
                 'data' => [
                     'report_product_materials' => $products,
+                    //'total_materials' => $total_materials,
                 ],
 
                 'success' => true

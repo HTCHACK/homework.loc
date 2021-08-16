@@ -24,7 +24,7 @@ class WareHouseMaterial extends Model
 
     public function warehouses()
     {
-        return $this->hasMany(WareHouse::class);
+        return $this->belongsTo(WareHouse::class,'ware_house_id');
     }
 
     public function materials()

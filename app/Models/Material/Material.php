@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\BuyMaterial\BuyingMaterialItem;
 use App\Models\BuyMaterial\BuyMaterial;
 use App\Models\Product\Product;
+use App\Models\WareHouseMaterial\WareHouse;
+use App\Models\WareHouseMaterial\WareHouseMaterial;
 use DateTimeInterface;
 
 class Material extends Model
@@ -29,6 +31,11 @@ class Material extends Model
     public function buymaterial()
     {
         return $this->belongsToMany(BuyMaterial::class);
+    }
+
+    public function warehouseMaterials()
+    {
+        return $this->hasMany(WareHouseMaterial::class);
     }
 
     protected function serializeDate(DateTimeInterface $date)

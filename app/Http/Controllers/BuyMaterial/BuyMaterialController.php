@@ -35,16 +35,13 @@ class BuyMaterialController extends Controller
         $buyMaterials = BuyMaterial::query()
             ->select(
                 'buy_material.*',
-                DB::raw('sum(buying_material_item.quantity * buying_material_item.price) as total'),
-                DB::raw('counter_agencies.name as agency')
+                DB::raw('sum(buying_material_item.quantity * buying_material_item.price) as total')
             )
             ->leftJoin('buying_material_item', function ($join) {
                 $join->on('buy_material.id', '=', 'buying_material_item.buy_material_id');
             })
-            ->leftJoin('counter_agencies', function ($join) {
-                $join->on('buy_material.counter_agency_id', '=', 'counter_agencies.id');
-            })
             ->groupBy('buy_material.id')
+            ->with('agencies')
             ->get();
 
         //Second Way
