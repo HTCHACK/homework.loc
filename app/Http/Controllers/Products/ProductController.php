@@ -2,16 +2,15 @@
 
 namespace App\Http\Controllers\Products;
 
+use App\Models\WareHouseMaterial\WareHouseMaterial;
+use App\Models\Product\ProductMaterial;
 use App\Http\Requests\ProductRequest;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\DB;
-use App\Models\Product\Product;
-use App\Models\Product\ProductMaterial;
-use App\Models\Sales\Sale;
-use Illuminate\Http\Request;
 use App\Http\Requests\SaleRequest;
-use App\Models\Material\Material;
-use App\Models\WareHouseMaterial\WareHouseMaterial;
+use App\Models\Product\Product;
+use Illuminate\Http\Request;
+
 
 class ProductController extends Controller
 {
@@ -165,121 +164,149 @@ class ProductController extends Controller
                 'success' => true
             ],
         ]);
-
     }
 
-
-
-
-    public function status($material_id)
+    public function status($quantity, $material_id)
     {
         $collect_data = [];
 
-        $collect = WareHouseMaterial::query()->select('ware_house_id', 'material_id', 'reminder')
-            ->where('material_id', $material_id)->get();
+        $warehouse_materials = WareHouseMaterial::query()->select(
+            'warehouse_materials.id',
+            'warehouse_materials.material_id',
+            'warehouse_materials.reminder',
+            'warehouse_materials.ware_house_id',
+            'warehouse_materials.buy_price',
+            DB::raw('materials.name as material'),
+            DB::raw('ware_houses.name as warehouse')
+        )
+            ->join('materials', 'warehouse_materials.material_id', '=', 'materials.id')
+            ->join('ware_houses', 'warehouse_materials.ware_house_id', '=', 'ware_houses.id')
+            ->where('warehouse_materials.material_id', $material_id)
+            ->orderBy('warehouse_materials.id', 'desc')
+            ->get();
 
-        $collect->groupBy('material_id')->flatMap(function ($items) {
 
-            $reminder = $items->sum('reminder');
+        foreach ($warehouse_materials as $warehouse_material) {
+            $used_quantity = $quantity - $warehouse_material->reminder;
 
-            return $items->map(function ($item) use ($reminder) {
+            if ($used_quantity > 0) {
+                $used = [];
 
-                $item->quantity = $reminder;
+                $ware_house_id = $warehouse_material->ware_house_id;
+                $reminder = $warehouse_material->reminder;
+                $id = $warehouse_material->id;
+                $material_id = $warehouse_material->material_id;
+                $material_name = $warehouse_material->material;
+                $buy_price = $warehouse_material->buy_price;
+                $warehouse_name = $warehouse_material->warehouse;
+                $need = $used_quantity;
 
-                return $item;
-            });
-        });
 
 
+                array_push(
+                    $used,
+                    [
+                        'id' => $id,
+                        'warehouse_id' => $ware_house_id,
+                        'warehouse' => $warehouse_name,
+                        'material_id' => $material_id,
+                        'material' => $material_name,
+                        'price' => $buy_price,
+                        'take' => $reminder,
+                        'need' => $need
+                    ]
+                );
+            } elseif ($used_quantity < 0) {
+                $used = [];
 
-        array_push($collect_data, ['collect' => $collect]);
+                $ware_house_id = $warehouse_material->ware_house_id;
+                $reminder = $warehouse_material->reminder;
+                $id = $warehouse_material->id;
+                $material_id = $warehouse_material->material_id;
+                $material_name = $warehouse_material->material;
+                $buy_price = $warehouse_material->buy_price;
+                $warehouse_name = $warehouse_material->warehouse;
+                $optional = abs($used_quantity);
+
+                array_push(
+                    $used,
+                    [
+                        'id' => $id,
+                        'warehouse_id' => $ware_house_id,
+                        'warehouse' => $warehouse_name,
+                        'material_id' => $material_id,
+                        'material' => $material_name,
+                        'price' => $buy_price,
+                        'optional' => $optional,
+                        'take' => $reminder - $optional,
+                    ]
+                );
+            }
+        }
+
+        array_push($collect_data, [
+            'materials' => [
+                'used_quantity' => $used,
+                'quantity' => $quantity,
+                'material_id' => $material_id
+            ]
+        ]);
 
         return $collect_data;
     }
 
-    public function lackReminder($quantity, $material_id)
+    public function getProductMaterials($quantity, $product_id)
     {
-        
-    }
+        $set_reminder = [];
 
-    public function calculateProductMaterials($quantity, $product_id, $material_id)
-    {
-
-        $calculate_data = [];
-
-        $warehouse_materials = WareHouseMaterial::query()->select(
-            'warehouse_materials.material_id',
-            'warehouse_materials.ware_house_id',
-            'warehouse_materials.reminder',
-            DB::raw("(*'$quantity')-warehouse_materials.reminder as lack_reminder")
-        )
-            ->where('material_id', $material_id)
-            ->with('warehouses')
+        $product_materials = ProductMaterial::query()
+            ->select(
+                'product_material.*',
+                DB::raw("'$quantity'*product_material.quantity as totalqty")
+            )
+            ->where('product_material.product_id', $product_id)
+            ->with(['material'])
             ->get();
 
-        foreach($warehouse_materials as $warehouse_material)
-        {
-            $material = Material::query()
-            ->select('id', 'name')
-            ->where('id', $warehouse_material->material_id)->get();
+        foreach ($product_materials as $product_material) {
+
+            $status = $this->status(($product_material->quantity * $quantity), $product_material->material_id);
+
         }
 
-        $material->push(['warehouse_materials' => $warehouse_materials]);
-        
+        array_push($set_reminder, ['product_material' => $product_material, 'status' => $status]);
 
-        //$status = $this->status($material_id);
+        return $set_reminder;
 
-        array_push($calculate_data, ['material' => $material]);
-
-        return $calculate_data;
     }
 
     public function getProductsWithMaterials($sales)
     {
+
         $products = [];
 
         foreach ($sales as $sale) {
 
             $product = Product::where('id', $sale['product_id'])
                 ->select('id', 'name')->get();
+
+            $product_materials = ProductMaterial::where('product_id', $sale['product_id'])->get();
+
+            $product = Product::where('id', $sale['product_id'])->select('id', 'name')->first();
+
+            $materials = collect();
+
+            foreach ($product_materials as $product_material) {
+
+                $materials = $this->getProductMaterials($sale['quantity'], $product_material->material_id, $product_material->quantity, $materials);
+
+            }   
+
+            array_push($products, ['product' => $product, 'qty' => $sale['quantity'], 'product_materials' => $materials, ]);
+
         }
-
-        $product_materials = ProductMaterial::where('product_id', $sale['product_id'])->get();
-
-        $product = Product::where('id', $sale['product_id'])->select('id', 'name')->get();
-
-
-        foreach ($product_materials as $product_material) {
-
-            $materials = $this->calculateProductMaterials($sale['quantity'],$product_material->product_id, $product_material->material_id);
-        }
-
-        
-
-        array_push(
-
-            $products,
-            [
-
-                'quantity' => $sale['quantity'],
-
-                'product' => $product,
-
-                'materials' => $materials
-
-            ]
-        );
-
 
         return $products;
-    }
-
-    public function getProducts()
-    {
-    }
-
-    public function calculateTotalMaterials()
-    {
 
     }
 
@@ -293,19 +320,20 @@ class ProductController extends Controller
             $products = $this->getProductsWithMaterials($sales);
         }
 
-        //$sale_product = $this->getProducts($products, $request);
-
-        //$total_materials = $this->calculateTotalMaterials($sale_product[0], $sale_product[1]);
-
         return response()->json([
+
             'result' => [
+
                 'data' => [
-                    'report_product_materials' => $products,
-                    //'total_materials' => $total_materials,
+
+                    'report_product_materials' => $products[0],
+                    'total_materials' => '0'
+
                 ],
 
                 'success' => true
             ],
         ]);
     }
+
 }
