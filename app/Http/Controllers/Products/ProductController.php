@@ -166,7 +166,7 @@ class ProductController extends Controller
         ]);
     }
 
-    public function status($quantity, $material_id)
+    public function warehouseMaterials($quantity, $material_id)
     {
         $collect_data = [];
 
@@ -184,12 +184,17 @@ class ProductController extends Controller
             ->where('warehouse_materials.material_id', $material_id)
             ->orderBy('warehouse_materials.id', 'desc')
             ->get();
-
+            
+            
 
         foreach ($warehouse_materials as $warehouse_material) {
             $used_quantity = $quantity - $warehouse_material->reminder;
 
-            if ($used_quantity > 0) {
+            $status = 0;
+
+            if ($used_quantity > 0) 
+            {
+
                 $used = [];
 
                 $ware_house_id = $warehouse_material->ware_house_id;
@@ -201,8 +206,6 @@ class ProductController extends Controller
                 $warehouse_name = $warehouse_material->warehouse;
                 $need = $used_quantity;
 
-
-
                 array_push(
                     $used,
                     [
@@ -212,11 +215,18 @@ class ProductController extends Controller
                         'material_id' => $material_id,
                         'material' => $material_name,
                         'price' => $buy_price,
+                        'reminder' => $reminder,
                         'take' => $reminder,
-                        'need' => $need
+                        'message' => [
+                            'need' => $need,
+                            'lack' => 'Not enough'
+                        ],
+                        'status'=>false 
                     ]
-                );
-            } elseif ($used_quantity < 0) {
+                );  
+            } 
+            elseif ($used_quantity < 0) 
+            {
                 $used = [];
 
                 $ware_house_id = $warehouse_material->ware_house_id;
@@ -236,15 +246,19 @@ class ProductController extends Controller
                         'warehouse' => $warehouse_name,
                         'material_id' => $material_id,
                         'material' => $material_name,
-                        'price' => $buy_price,
+                        'price' => $buy_price,        
+                        'reminder' => $reminder,
                         'optional' => $optional,
                         'take' => $reminder - $optional,
+                        'status'=>true
                     ]
                 );
             }
+
         }
 
-        array_push($collect_data, [
+        array_push($collect_data, 
+        [
             'materials' => [
                 'used_quantity' => $used,
                 'quantity' => $quantity,
@@ -255,85 +269,228 @@ class ProductController extends Controller
         return $collect_data;
     }
 
-    public function getProductMaterials($quantity, $product_id)
+    public function materials($quantity, $product_id)
     {
-        $set_reminder = [];
+        $materials = [];
 
         $product_materials = ProductMaterial::query()
-            ->select(
-                'product_material.*',
-                DB::raw("'$quantity'*product_material.quantity as totalqty")
-            )
-            ->where('product_material.product_id', $product_id)
-            ->with(['material'])
+            ->select('product_id', 'material_id', 'quantity', DB::raw("quantity*'$quantity'"))
+            ->where('product_id', $product_id)
             ->get();
 
         foreach ($product_materials as $product_material) {
-
-            $status = $this->status(($product_material->quantity * $quantity), $product_material->material_id);
-
+            $material = $this->warehouseMaterials($quantity, $product_material->material_id);
         }
 
-        array_push($set_reminder, ['product_material' => $product_material, 'status' => $status]);
+        array_push($materials, [$product_materials, $material]);
 
-        return $set_reminder;
-
+        return $materials;
     }
 
-    public function getProductsWithMaterials($sales)
+    public function reportNew(SaleRequest $request)
     {
+        $reportData = [];
 
-        $products = [];
+        foreach ($request->sales as $sale) {
+            $product_id = $sale['product_id'];
+            $quantity = $sale['quantity'];
 
-        foreach ($sales as $sale) {
+            $product = Product::query()->select('id', 'name')->where('id', $product_id)->get();
 
-            $product = Product::where('id', $sale['product_id'])
-                ->select('id', 'name')->get();
+            array_push($reportData, [
 
-            $product_materials = ProductMaterial::where('product_id', $sale['product_id'])->get();
+                'product' => $product,
+                'qty' => $quantity,
+                'product_materials' => $this->materials($quantity, $product_id),
 
-            $product = Product::where('id', $sale['product_id'])->select('id', 'name')->first();
-
-            $materials = collect();
-
-            foreach ($product_materials as $product_material) {
-
-                $materials = $this->getProductMaterials($sale['quantity'], $product_material->material_id, $product_material->quantity, $materials);
-
-            }   
-
-            array_push($products, ['product' => $product, 'qty' => $sale['quantity'], 'product_materials' => $materials, ]);
-
-        }
-
-        return $products;
-
-    }
-
-    public function sale(Request $request)
-    {
-
-        $products = [];
-
-        if (is_array($sales = $request['sales'])) {
-
-            $products = $this->getProductsWithMaterials($sales);
+            ]);
         }
 
         return response()->json([
-
             'result' => [
 
                 'data' => [
 
-                    'report_product_materials' => $products[0],
-                    'total_materials' => '0'
+                    'report_product_materials' => $reportData
 
                 ],
 
                 'success' => true
-            ],
+
+            ]
         ]);
     }
 
+
+
+    // public function status($quantity, $material_id)
+    // {
+    //     $collect_data = [];
+
+    //     $warehouse_materials = WareHouseMaterial::query()->select(
+    //         'warehouse_materials.id',
+    //         'warehouse_materials.material_id',
+    //         'warehouse_materials.reminder',
+    //         'warehouse_materials.ware_house_id',
+    //         'warehouse_materials.buy_price',
+    //         DB::raw('materials.name as material'),
+    //         DB::raw('ware_houses.name as warehouse')
+    //     )
+    //         ->join('materials', 'warehouse_materials.material_id', '=', 'materials.id')
+    //         ->join('ware_houses', 'warehouse_materials.ware_house_id', '=', 'ware_houses.id')
+    //         ->where('warehouse_materials.material_id', $material_id)
+    //         ->orderBy('warehouse_materials.id', 'desc')
+    //         ->get();
+
+
+    //     foreach ($warehouse_materials as $warehouse_material) {
+    //         $used_quantity = $quantity - $warehouse_material->reminder;
+
+    //         if ($used_quantity > 0) {
+    //             $used = [];
+
+    //             $ware_house_id = $warehouse_material->ware_house_id;
+    //             $reminder = $warehouse_material->reminder;
+    //             $id = $warehouse_material->id;
+    //             $material_id = $warehouse_material->material_id;
+    //             $material_name = $warehouse_material->material;
+    //             $buy_price = $warehouse_material->buy_price;
+    //             $warehouse_name = $warehouse_material->warehouse;
+    //             $need = $used_quantity;
+
+    //             array_push(
+    //                 $used,
+    //                 [
+    //                     'id' => $id,
+    //                     'warehouse_id' => $ware_house_id,
+    //                     'warehouse' => $warehouse_name,
+    //                     'material_id' => $material_id,
+    //                     'material' => $material_name,
+    //                     'price' => $buy_price,
+    //                     'take' => $reminder,
+    //                     'need' => $need
+    //                 ]
+    //             );
+    //         } elseif ($used_quantity < 0) {
+    //             $used = [];
+
+    //             $ware_house_id = $warehouse_material->ware_house_id;
+    //             $reminder = $warehouse_material->reminder;
+    //             $id = $warehouse_material->id;
+    //             $material_id = $warehouse_material->material_id;
+    //             $material_name = $warehouse_material->material;
+    //             $buy_price = $warehouse_material->buy_price;
+    //             $warehouse_name = $warehouse_material->warehouse;
+    //             $optional = abs($used_quantity);
+
+    //             array_push(
+    //                 $used,
+    //                 [
+    //                     'id' => $id,
+    //                     'warehouse_id' => $ware_house_id,
+    //                     'warehouse' => $warehouse_name,
+    //                     'material_id' => $material_id,
+    //                     'material' => $material_name,
+    //                     'price' => $buy_price,
+    //                     'optional' => $optional,
+    //                     'take' => $reminder - $optional,
+    //                 ]
+    //             );
+    //         }
+    //     }
+
+    //     array_push($collect_data, [
+    //         'materials' => [
+    //             'used_quantity' => $used,
+    //             'quantity' => $quantity,
+    //             'material_id' => $material_id
+    //         ]
+    //     ]);
+
+    //     return $collect_data;
+    // }
+
+    // public function getProductMaterials($quantity, $product_id)
+    // {
+    //     $set_reminder = [];
+
+    //     $product_materials = ProductMaterial::query()
+    //         ->select(
+    //             'product_material.*',
+    //             DB::raw("'$quantity'*product_material.quantity as totalqty")
+    //         )
+    //         ->where('product_material.product_id', $product_id)
+    //         ->with(['material'])
+    //         ->get();
+
+    //     foreach ($product_materials as $product_material) {
+    //         $warehouse_materials = WareHouseMaterial::query()
+    //             ->select('warehouse_materials.*')
+    //             ->join('product_material', 'warehouse_materials.material_id', '=', 'product_material.material_id')
+    //             ->join('products', 'product_material.product_id', '=', 'products.id')
+    //             ->where('product_material.product_id', $product_material->product_id)
+    //             ->get();
+    //     }
+
+    //     array_push($set_reminder, ['product_materials' => $product_materials, 'nessary' => $warehouse_materials]);
+
+    //     return $set_reminder;
+    // }
+
+    // public function getProductsWithMaterials($sales)
+    // {
+
+    //     $products = [];
+
+    //     foreach ($sales as $sale) {
+
+    //         $product = Product::where('id', $sale['product_id'])
+    //             ->select('id', 'name')->get();
+
+    //         $product_materials = ProductMaterial::where('product_id', $sale['product_id'])->with('material')->get();
+
+    //         $product = Product::where('id', $sale['product_id'])->select('id', 'name')->first();
+
+    //         foreach ($product_materials as $product_material) {
+
+    //             $materials = $this->getProductMaterials($sale['quantity'], $product_material->product_id, $product_material->quantity);
+    //         }
+
+    //         array_push($products, ['product' => $product, 'qty' => $sale['quantity'], 'materials' => $materials]);
+    //     }
+
+    //     return $products;
+    // }
+
+    // public function sale(Request $request)
+    // {
+
+    //     $products = [];
+
+    //     if (is_array($sales = $request['sales'])) {
+
+    //         $products = $this->getProductsWithMaterials($sales);
+    //     }
+
+    //     return response()->json([
+
+    //         'result' => [
+
+    //             'data' => [
+
+    //                 'report_product_materials' => $products,
+
+    //                 'total_materials' => '0'
+
+    //             ],
+
+    //             'success' => true
+
+    //         ],
+    //     ]);
+    // }
+
+    // public function newReport()
+    // {
+    // }
 }

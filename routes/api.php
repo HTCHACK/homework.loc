@@ -48,6 +48,8 @@ Route::get('productMaterials', [ProductController::class, 'productMaterials']);
 
 Route::post('buy_material/send', [BuyMaterialController::class, 'send']);
 Route::post('sales/report', [ProductController::class, 'report']);
+Route::post('sales/reportNew', [ProductController::class, 'reportNew']);
+
 
 Route::post('sale', [ProductController::class, 'sale']);
 
