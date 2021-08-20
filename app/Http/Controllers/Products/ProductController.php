@@ -16,10 +16,11 @@ use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
+    public $taken_materials = [];
 
     public function __construct()
     {
-
+        $this->taken_materials = [];
         // $this->middleware('auth:api');
         // $this->middleware('permissions:product_access')->only('index');
         // $this->middleware('permissions:product_create')->only('store');
@@ -168,6 +169,10 @@ class ProductController extends Controller
         ]);
     }
 
+
+//Second
+
+
     public function report(Request $request)
     {
 
@@ -192,6 +197,7 @@ class ProductController extends Controller
 
         $products = collect($sales)->map(fn ($product) => [
             "product_name" => Product::find($product['product_id'])->name,
+            "product_id" => $product['product_id'],
             "quantity" => $product['quantity'],
             "product_materials" => $this->MaterialCollection($product['quantity'], $product['product_id'])
         ]);
@@ -213,12 +219,13 @@ class ProductController extends Controller
             ];
         });
 
-
         return $material;
     }
 
-    public function WareHouseCollection($material_id, $quantity)
+
+    public function WareHouseCollection($material_id, $totalQty)
     {
+        $taken_finished = [];
 
         $warehouse_materials = WareHouseMaterial::query()
             ->select(
@@ -226,35 +233,90 @@ class ProductController extends Controller
                 'material_id',
                 'reminder',
                 'ware_house_id',
-                'buy_price',
-                DB::raw("'$quantity'-reminder as lack"),
-                DB::raw("'$quantity' as take")
+                'buy_price'
             )
             ->where('material_id', $material_id)->get();
 
-        $ware = $warehouse_materials
-            ->filter(function ($warehouse_material) {
-                return $warehouse_material->id;
-            })
-            ->map(function ($warehouse_material) {
+        foreach ($warehouse_materials as $warehouse_material) 
+        {
+            // TODO:: find ($this->taken_materials, 'id, $warehouse_material->id)
+            $find_item = WareHouseMaterial::find($this->taken_materials, 'id', $warehouse_material->id);
 
-                return [
-                    "id" => $warehouse_material->id,
-                    "material_name" => Material::find($warehouse_material->material_id)->name,
-                    "material_id" => $warehouse_material->material_id,
-                    "warehouse_name" => WareHouse::find($warehouse_material->ware_house_id)->name,
-                    "reminder" => $warehouse_material->reminder,
-                    "buy_price" => $warehouse_material->buy_price,
-                    "lack" => [
-                        $warehouse_material->lack < 0 ? "lack = " . abs($warehouse_material->lack) : 0
-                    ],
-                    "status" =>$warehouse_material->lack > 0 ? "need = " . $warehouse_material->lack :  "take= " . $warehouse_material->take
+            //agar bor bolsa
+            if ($find_item) 
+            {
 
-                ];
-            });
+                $warehouse_material->id;
+                $warehouse_material->remainder - $find_item->need;
+                $warehouse_material->material_id;
+                $warehouse_material->ware_house_id;
+                $warehouse_material->buy_price;
 
-        return $ware;
-            
+                //yetarli bolsa
+
+                if ($find_item->take == $totalQty) 
+                {
+                    array_push($taken_finished, $this->taken_materials);
+                    break;
+                } 
+                else 
+                {
+
+                    array_push($this->taken_materials, [
+                        'id' => $warehouse_material->id,
+                        'material_id' => $material_id,
+                        'ware_house_id' =>  $warehouse_material->ware_house_id,
+                        'buy_price' => $warehouse_material->buy_price,
+                        'need' => ($warehouse_material->remainder - $find_item->need),
+                    ]);
+
+                    continue;
+
+                }
+            }
+             else 
+            {
+
+                $id = $warehouse_material->id;
+                $material_id = $warehouse_material->material_id;
+                $ware_house_id = $warehouse_material->ware_house_id;
+                $buy_price = $warehouse_material->buy_price;
+                $need = $totalQty - $warehouse_material->remainder;
+
+                //10 - 2
+                //5 - 6
+
+                if ($need > 0) {
+
+                    array_push(
+                        $this->taken_materials, 
+                        [
+                        'id' => $id,
+                        'material_id' => $material_id,
+                        'ware_house_id' => $ware_house_id,
+                        'buy_price' => $buy_price,
+                        'lack' => 0,
+                        'need' => $need,
+                        ]
+                    );
+                } 
+                elseif ($need < 0) 
+                {
+                    array_push($this->taken_materials, 
+                        [
+                            'id' => $id,
+                            'material_id' => $material_id,
+                            'ware_house_id' => $ware_house_id,
+                            'buy_price' => $buy_price,
+                            'lack' => abs($need),
+                            'take' => $totalQty,
+                        ]
+                    );
+                }
+            }
+        }
+
+        return $taken_finished;
     }
 
 }
