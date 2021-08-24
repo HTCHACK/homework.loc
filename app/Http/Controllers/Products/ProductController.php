@@ -3,24 +3,31 @@
 namespace App\Http\Controllers\Products;
 
 use App\Models\WareHouseMaterial\WareHouseMaterial;
+use App\Models\WareHouseMaterial\WareHouse;
 use App\Models\Product\ProductMaterial;
 use App\Http\Requests\ProductRequest;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\DB;
 use App\Http\Requests\SaleRequest;
+use Illuminate\Support\Facades\DB;
 use App\Models\Material\Material;
 use App\Models\Product\Product;
-use App\Models\WareHouseMaterial\WareHouse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 
 
 class ProductController extends Controller
 {
     public $taken_materials = [];
+    public $set_reminder = [];
+    public $collect_materials = [];
+    public $check_reminder = [];
 
     public function __construct()
     {
         $this->taken_materials = [];
+        $this->set_reminder = [];
+        $this->collect_materials = [];
+        $this->check_reminder = [];
         // $this->middleware('auth:api');
         // $this->middleware('permissions:product_access')->only('index');
         // $this->middleware('permissions:product_create')->only('store');
@@ -35,6 +42,7 @@ class ProductController extends Controller
 
         $all = Product::all();
 
+
         return response()->json(['all' => $all]);
     }
 
@@ -45,6 +53,7 @@ class ProductController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
+
     public function store(ProductRequest $request)
     {
 
@@ -118,7 +127,7 @@ class ProductController extends Controller
     }
 
 
-    public function reportNew(SaleRequest $request)
+    public function reportN(SaleRequest $request)
     {
         $values = collect($request->sales)->map(fn ($value) => [
             'product_id' => $value['product_id'],
@@ -170,7 +179,7 @@ class ProductController extends Controller
     }
 
 
-//Second
+    //Second
 
 
     public function report(Request $request)
@@ -235,83 +244,77 @@ class ProductController extends Controller
                 'ware_house_id',
                 'buy_price'
             )
-            ->where('material_id', $material_id)->get();
+            ->where('material_id', $material_id)->orderBy('id', 'asc')->get();
 
-        foreach ($warehouse_materials as $warehouse_material) 
-        {
+        foreach ($warehouse_materials as $warehouse_material) {
             // TODO:: find ($this->taken_materials, 'id, $warehouse_material->id)
-            $find_item = WareHouseMaterial::find($this->taken_materials, 'id', $warehouse_material->id);
+
+            $ifExist = ProductMaterial::find($this->taken_materials, 'id', $warehouse_material->material_id);
+         
+            //$ifExist = Arr::exists($this->taken_materials, $warehouse_material->id);
 
             //agar bor bolsa
-            if ($find_item) 
-            {
+            if ($ifExist) {
 
-                $warehouse_material->id;
-                $warehouse_material->remainder - $find_item->need;
-                $warehouse_material->material_id;
-                $warehouse_material->ware_house_id;
-                $warehouse_material->buy_price;
 
-                //yetarli bolsa
+                $enough = array_sum(array_map(function ($taken_material) {
+                    return $taken_material['take'];
+                }, $this->taken_materials));
 
-                if ($find_item->take == $totalQty) 
-                {
+
+                if ($totalQty == $enough) {
+
                     array_push($taken_finished, $this->taken_materials);
+
                     break;
-                } 
-                else 
-                {
+                } else {
+
+                    $totalQty -= $enough;
 
                     array_push($this->taken_materials, [
                         'id' => $warehouse_material->id,
                         'material_id' => $material_id,
-                        'ware_house_id' =>  $warehouse_material->ware_house_id,
-                        'buy_price' => $warehouse_material->buy_price,
-                        'need' => ($warehouse_material->remainder - $find_item->need),
+                        'take' => $totalQty
                     ]);
 
                     continue;
-
                 }
-            }
-             else 
-            {
+            } else {
 
                 $id = $warehouse_material->id;
                 $material_id = $warehouse_material->material_id;
-                $ware_house_id = $warehouse_material->ware_house_id;
-                $buy_price = $warehouse_material->buy_price;
-                $need = $totalQty - $warehouse_material->remainder;
+                $qty = $totalQty;
+                $lack = $totalQty - $warehouse_material->reminder;
+                $totalQty -= $warehouse_material->remainder;
+
 
                 //10 - 2
-                //5 - 6
+                //2 - 5 
 
-                if ($need > 0) {
+                if ($totalQty > 0) {
 
                     array_push(
-                        $this->taken_materials, 
-                        [
-                        'id' => $id,
-                        'material_id' => $material_id,
-                        'ware_house_id' => $ware_house_id,
-                        'buy_price' => $buy_price,
-                        'lack' => 0,
-                        'need' => $need,
-                        ]
-                    );
-                } 
-                elseif ($need < 0) 
-                {
-                    array_push($this->taken_materials, 
+                        $this->taken_materials,
                         [
                             'id' => $id,
                             'material_id' => $material_id,
-                            'ware_house_id' => $ware_house_id,
-                            'buy_price' => $buy_price,
-                            'lack' => abs($need),
-                            'take' => $totalQty,
+                            'take' => $warehouse_material->remainder,
                         ]
                     );
+
+                    
+                } elseif ($totalQty <= 0) {
+
+                    array_push(
+                        $taken_finished,
+                        [
+                            'id' => $id,
+                            'material_id' => $material_id,
+                            'take' => $qty,
+                        ]
+                    );
+
+                    
                 }
             }
         }
@@ -319,4 +322,151 @@ class ProductController extends Controller
         return $taken_finished;
     }
 
+
+    public function sale(SaleRequest $request)
+    {
+
+        if (is_array($sales = $request['sales'])) {
+            $product = $this->saleProducts($sales);
+        }
+
+        return response()->json([
+            "result" => [
+                "data" => [
+                    "report_product_materials" => [
+                        'product' => $product
+                    ]
+                ],
+            ],
+            "success" => true
+        ]);
+    }
+
+    public function saleProducts($sales)
+    {
+
+        $products = [];
+
+        foreach ($sales as $sale) {
+            $tqty = $sale['quantity'];
+            $product = Product::query()->select('id', 'name')->where('id', $sale['product_id'])->get();
+
+            $product_materials = ProductMaterial::query()->select('id', 'product_id', 'material_id')->where('product_id', $sale['product_id'])->get();
+
+            foreach ($product_materials as $product_material) {
+
+                $new_materials = [];
+
+                $warehouse_materials = WareHouseMaterial::query()
+                    ->select(
+                        'id',
+                        'material_id',
+                        'reminder',
+                        'ware_house_id',
+                        'buy_price'
+                    )
+                    ->where('material_id', $product_material->material_id)->orderBy('id', 'asc')->get();
+
+                foreach ($warehouse_materials as $warehouse_material) {
+
+                    $if_exist = Arr::exists($this->collect_materials, $warehouse_material->id);
+
+                    $totalTaken = collect($this->collect_materials)
+                        ->groupBy('material_id')
+                        ->map(fn ($item) => $item->sum('take'))
+                        ->toArray();
+
+                    $id = $warehouse_material->id;
+
+                    if ($if_exist) {
+
+                        if ($product_material->quantity * $sale['quantity'] == $totalTaken) {
+
+                            array_push($new_materials, $this->collect_materials);
+
+                            break;
+                        } else {
+
+                            if ($this->check_reminder[$id]['lack'] != 0) {
+                                $product_material->quantity * $sale['quantity'] -=  $this->check_reminder[$id]['lack'];
+
+                                array_push($this->collect_materials, [
+                                    'id' => $warehouse_material->id,
+                                    'material_id' => $product_material->material_id,
+                                    'take' => $totalTaken
+                                ]);
+
+                                continue;
+                            } else {
+                                array_push($this->collect_materials, [
+                                    'id' => $warehouse_material->id,
+                                    'material_id' => $product_material->material_id,
+                                    'take' => "not enough"
+                                ]);
+
+                                continue;
+                            }
+                        }
+                    } else {
+
+                        $id = $warehouse_material->id;
+                        $material_id = $warehouse_material->material_id;
+                        $qty = $product_material->quantity * $sale['quantity'];
+                        $lack = $product_material->quantity * $sale['quantity'] - $warehouse_material->reminder;
+                        $product_material->quantity * $sale['quantity'] -= $warehouse_material->remainder;
+
+
+                        //10 - 2
+                        //2 - 5
+
+                        if ($product_material->quantity * $sale['quantity'] > 0) {
+
+                            array_push(
+                                $this->collect_materials,
+                                [
+                                    'id' => $id,
+                                    'material_id' => $material_id,
+                                    'take' => $warehouse_material->remainder,
+                                ]
+                            );
+
+                            array_push(
+                                $this->check_reminder,
+                                [
+                                    'id' => $id,
+                                    'lack' => 0,
+                                ]
+                            );
+                        } elseif ($product_material->quantity * $sale['quantity'] <= 0) {
+
+                            array_push(
+                                $new_materials,
+                                [
+                                    'id' => $id,
+                                    'material_id' => $material_id,
+                                    'take' => $qty,
+                                ]
+                            );
+
+                            array_push(
+                                $this->check_reminder,
+                                [
+                                    'id' => $id,
+                                    'lack' => $lack,
+                                ]
+                            );
+                        }
+                    }
+                }
+            }
+        }
+
+        array_push($products, [
+            'product' => $product,
+            'tqty' => $tqty,
+            'materials' => $new_materials
+        ]);
+
+        return $products;
+    }
 }

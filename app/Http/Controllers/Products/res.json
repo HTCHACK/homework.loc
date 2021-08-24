@@ -1,0 +1,115 @@
+{
+    "result": {
+        "data": {
+            "report_product_materials": {
+                "product": [
+                    {
+                        "product_name": "Computer",
+                        "product_id": 1,
+                        "quantity": 2,
+                        "product_materials": [
+                            {
+                                "material_id": 1,
+                                "quantity": 4,
+                                "qty": 8,
+                                "take": [
+                                    {
+                                        "id":1,
+                                        "material_id":1,
+                                        "take":5
+                                    },
+                                    {
+                                        "id":7,
+                                        "material_id":1,
+                                        "take":3
+                                    }
+                                ]
+                            },
+                            {
+                                "material_id": 2,
+                                "quantity": 3,
+                                "qty": 6,
+                                "take": [
+                                    {
+                                        "id":2,
+                                        "material_id":2,
+                                        "take":5
+                                    },
+                                    {
+                                        "id":5,
+                                        "material_id":2,
+                                        "take":1
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "product_name": "Phone",
+                        "product_id": 2,
+                        "quantity": 3,
+                        "product_materials": [
+                            {
+                                "material_id": 1,
+                                "quantity": 1,
+                                "qty": 3,
+                                "take": [
+                                    {
+                                        "id":7,
+                                        "material_id":1,
+                                        "take":2
+                                    },
+                                    {
+                                        "id":null,
+                                        "material_id":1,
+                                        "take":"1 is not enough"
+                                    }
+                                ]
+                            },
+                            {
+                                "material_id": 2,
+                                "quantity": 2,
+                                "qty": 6,
+                                "take": [
+                                    {
+                                        "id":5,
+                                        "material_id":2,
+                                        "take":4
+                                    },
+                                    {
+                                        "id":6,
+                                        "material_id":2,
+                                        "take":2
+                                    }
+                                ]
+                            },
+                            {
+                                "material_id": 3,
+                                "quantity": 3,
+                                "qty": 9,
+                                "take": [
+                                    {
+                                        "id":3,
+                                        "material_id":3,
+                                        "take":5
+                                    },
+                                    {
+                                        "id":9,
+                                        "material_id":3,
+                                        "take":3
+                                    },
+                                    {
+                                        "id":10,
+                                        "material_id":3,
+                                        "take":1
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    },
+    "success": true
+}
