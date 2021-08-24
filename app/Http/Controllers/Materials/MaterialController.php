@@ -23,7 +23,10 @@ class MaterialController extends Controller
 
     public function index()
     {
-        return Material::all();
+    
+        $all = Material::all();
+
+        return response()->json(['all' => $all]);
     }
 
     /**

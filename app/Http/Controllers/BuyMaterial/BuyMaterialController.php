@@ -42,6 +42,7 @@ class BuyMaterialController extends Controller
             })
             ->groupBy('buy_material.id')
             ->with('agencies')
+            ->orderBy('created_at','desc')
             ->get();
 
         //Second Way

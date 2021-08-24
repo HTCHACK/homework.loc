@@ -46,6 +46,9 @@ class BuyMaterial extends Model
         return $date->format('Y-m-d');
     }
 
+    protected $casts = [
+        'date' => 'date:Y-m-d',
+    ];
     
 
     

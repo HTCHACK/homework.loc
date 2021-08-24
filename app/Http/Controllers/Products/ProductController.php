@@ -249,11 +249,12 @@ class ProductController extends Controller
         foreach ($warehouse_materials as $warehouse_material) {
             // TODO:: find ($this->taken_materials, 'id, $warehouse_material->id)
 
-            $ifExist = ProductMaterial::find($this->taken_materials, 'id', $warehouse_material->material_id);
+            $ifExist = WareHouseMaterial::find($this->taken_materials, 'id', $warehouse_material->id);
          
             //$ifExist = Arr::exists($this->taken_materials, $warehouse_material->id);
 
             //agar bor bolsa
+
             if ($ifExist) {
 
 
@@ -371,10 +372,9 @@ class ProductController extends Controller
 
                     $if_exist = Arr::exists($this->collect_materials, $warehouse_material->id);
 
-                    $totalTaken = collect($this->collect_materials)
-                        ->groupBy('material_id')
-                        ->map(fn ($item) => $item->sum('take'))
-                        ->toArray();
+                    $totalTaken = array_sum(array_map(function ($taken_material) {
+                        return $taken_material['take'];
+                    }, $this->taken_materials));
 
                     $id = $warehouse_material->id;
 
@@ -387,25 +387,36 @@ class ProductController extends Controller
                             break;
                         } else {
 
-                            if ($this->check_reminder[$id]['lack'] != 0) {
-                                $product_material->quantity * $sale['quantity'] -=  $this->check_reminder[$id]['lack'];
+                            // if ($this->check_reminder[$id]['lack'] != 0) {
+                            //     $product_material->quantity * $sale['quantity'] -=  $this->check_reminder[$id]['lack'];
 
-                                array_push($this->collect_materials, [
-                                    'id' => $warehouse_material->id,
-                                    'material_id' => $product_material->material_id,
-                                    'take' => $totalTaken
-                                ]);
+                            //     array_push($this->collect_materials, [
+                            //         'id' => $warehouse_material->id,
+                            //         'material_id' => $product_material->material_id,
+                            //         'take' => $totalTaken
+                            //     ]);
 
-                                continue;
-                            } else {
-                                array_push($this->collect_materials, [
-                                    'id' => $warehouse_material->id,
-                                    'material_id' => $product_material->material_id,
-                                    'take' => "not enough"
-                                ]);
+                            //     continue;
+                            // } else {
+                            //     array_push($this->collect_materials, [
+                            //         'id' => $warehouse_material->id,
+                            //         'material_id' => $product_material->material_id,
+                            //         'take' => "not enough"
+                            //     ]);
 
-                                continue;
-                            }
+                            //     continue;
+                            // }
+                            $totalQty = $product_material->quantity * $sale['quantity'];
+                            $totalQty -= 1;
+
+                            array_push($this->taken_materials, [
+                                'id' => $warehouse_material->id,
+                                'material_id' => $warehouse_material->material_id,
+                                'take' => $totalQty
+                            ]);
+        
+                            continue;
+
                         }
                     } else {
 
@@ -430,13 +441,13 @@ class ProductController extends Controller
                                 ]
                             );
 
-                            array_push(
-                                $this->check_reminder,
-                                [
-                                    'id' => $id,
-                                    'lack' => 0,
-                                ]
-                            );
+                            // array_push(
+                            //     $this->check_reminder,
+                            //     [
+                            //         'id' => $id,
+                            //         'lack' => 0,
+                            //     ]
+                            // );
                         } elseif ($product_material->quantity * $sale['quantity'] <= 0) {
 
                             array_push(
@@ -448,13 +459,13 @@ class ProductController extends Controller
                                 ]
                             );
 
-                            array_push(
-                                $this->check_reminder,
-                                [
-                                    'id' => $id,
-                                    'lack' => $lack,
-                                ]
-                            );
+                            // array_push(
+                            //     $this->check_reminder,
+                            //     [
+                            //         'id' => $id,
+                            //         'lack' => $lack,
+                            //     ]
+                            // );
                         }
                     }
                 }

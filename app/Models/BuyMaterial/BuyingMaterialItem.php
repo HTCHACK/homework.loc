@@ -38,6 +38,7 @@ class BuyingMaterialItem extends Model
 
     protected $casts = [
         'lack' => 'integer',
+        'date' => 'date:Y-m-d',
     ];
     
 }

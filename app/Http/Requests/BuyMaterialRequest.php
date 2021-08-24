@@ -36,7 +36,7 @@ class BuyMaterialRequest extends FormRequest
 
             'items.*.material_id'=>'required|distinct|exists:materials,id',
 
-            'items.*.price'=>[ Rule::exists('materials','price')],
+            'items.*.price'=>'required|numeric|min:0|not_in:0',
 
             'items.*.quantity'=>'required|numeric|min:0|not_in:0',
             

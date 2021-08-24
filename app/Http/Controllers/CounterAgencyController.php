@@ -14,8 +14,12 @@ class CounterAgencyController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function index()
-    {
-        return CounterAgency::all();
+    {   
+        $all = CounterAgency::all();
+
+
+        return response()->json(['all' => $all]);
+        
     }
 
     /**
