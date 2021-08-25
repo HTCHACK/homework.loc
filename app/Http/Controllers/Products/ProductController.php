@@ -250,9 +250,9 @@ class ProductController extends Controller
 
         $taken = $warehouse_materials->map(function($warehouse_material)
         {
-            $ifExist = WareHouseMaterial::find($this->taken_materials, 'id', $warehouse_material->id);
+            //$ifExist = WareHouseMaterial::find($this->taken_materials, 'id', $warehouse_material->id);
          
-            //$ifExist = Arr::exists($this->taken_materials, $warehouse_material->id);
+            $ifExist = Arr::exists($this->taken_materials, $warehouse_material->id);
             $taken_finished = [];
             //agar bor bolsa
 
@@ -263,11 +263,6 @@ class ProductController extends Controller
                     return $taken_material['take'];
                 }, $this->taken_materials));
 
-                $sum_material_id = collect($this->taken_materials)
-                ->groupBy('material_id')
-                ->map(fn ($material) => $material->sum('take'))
-                ->toArray();
-
                 $id = $warehouse_material->id;
 
                 if ($warehouse_material->total == $enough) {
@@ -277,27 +272,6 @@ class ProductController extends Controller
                     
 
                 } else {
-
-                        // if ($this->set_reminder[$id]['lack'] != 0) {
-                        //     $totalQty -=  $this->set_reminder[$id]['lack'];
-
-                        //     array_push($this->collect_materials, [
-                        //         'id' => $warehouse_material->id,
-                        //         'material_id' => $material_id,
-                        //         'take' => $totalQty
-                        //     ]);
-
-                        //     continue;
-
-                        // } else   {
-                        //     array_push($this->collect_materials, [
-                        //         'id' => $warehouse_material->id,
-                        //         'material_id' => $material_id,
-                        //         'take' => "not enough"
-                        //     ]);
-
-                        //     continue;
-                        // }
 
                     $warehouse_material->total -= $enough;
 
@@ -334,13 +308,6 @@ class ProductController extends Controller
                         ]
                     );
 
-                    array_push(
-                        $this->set_reminder,
-                        [
-                            'id' => $id,
-                            'lack' => 0,
-                        ]
-                    );
                     
                 } elseif ($warehouse_material->total <= 0) {
 
@@ -352,14 +319,6 @@ class ProductController extends Controller
                             'take' => $qty,
                         ]
                     );
-                    array_push(
-                        $this->set_reminder,
-                        [
-                            'id' => $id,
-                            'lack' => $lack,
-                        ]
-                    );
-
                     
                 }
             }
