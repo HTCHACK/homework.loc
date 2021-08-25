@@ -213,7 +213,8 @@ class ProductController extends Controller
         ]);
 
         return $products;
-    }
+    } 
+
 
     public function MaterialCollection($quantity, $product_id)
     {
@@ -349,11 +350,6 @@ class ProductController extends Controller
                     return $taken_material['take'];
                 }, $this->taken_materials));
 
-                $sum_material_id = collect($this->taken_materials)
-                    ->groupBy('material_id')
-                    ->map(fn ($material) => $material->sum('take'))
-                    ->toArray();
-
                 $id = $warehouse_material->id;
 
                 if ($totalQty == $enough) {
@@ -361,7 +357,9 @@ class ProductController extends Controller
                     array_push($taken_finished, $this->taken_materials);
 
                     break;
+
                 } else {
+                    
 
                     // if ($this->set_reminder[$id]['lack'] != 0) {
                     //     $totalQty -=  $this->set_reminder[$id]['lack'];
@@ -369,12 +367,12 @@ class ProductController extends Controller
                     //     array_push($this->collect_materials, [
                     //         'id' => $warehouse_material->id,
                     //         'material_id' => $material_id,
-                    //         'take' => $totalQty
+                            // 'take' => $totalQty
                     //     ]);
 
                     //     continue;
 
-                    // } else   {
+                    // // } else   {
                     //     array_push($this->collect_materials, [
                     //         'id' => $warehouse_material->id,
                     //         'material_id' => $material_id,
