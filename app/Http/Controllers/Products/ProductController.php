@@ -224,7 +224,7 @@ class ProductController extends Controller
                 "material_id" => $product_material->material_id,
                 "quantity" => $product_material->quantity,
                 "qty" => $product_material->qty,
-                "take" => $this->WarehouseMap($product_material->material_id, $product_material->qty)
+                "take" => $this->WareHouseCollection($product_material->material_id, $product_material->qty)
             ];
         });
 
@@ -349,12 +349,11 @@ class ProductController extends Controller
         foreach ($warehouse_materials as $warehouse_material) {
             // TODO:: find ($this->taken_materials, 'id, $warehouse_material->id)
 
-            $ifExist = WareHouseMaterial::find($this->taken_materials, 'id', $warehouse_material->id);
+            //$ifExist = WareHouseMaterial::find($this->taken_materials, 'id', $warehouse_material->id);
          
-            //$ifExist = Arr::exists($this->taken_materials, $warehouse_material->id);
+            $ifExist = Arr::exists($this->taken_materials, $warehouse_material->id);
 
             //agar bor bolsa
-
             if ($ifExist) {
 
 
@@ -409,7 +408,7 @@ class ProductController extends Controller
                     continue;
                 }
                  
-
+    
                        
             } else {
 
@@ -434,13 +433,13 @@ class ProductController extends Controller
                         ]
                     );
 
-                    array_push(
-                        $this->set_reminder,
-                        [
-                            'id' => $id,
-                            'lack' => 0,
-                        ]
-                    );
+                    // array_push(
+                    //     $this->set_reminder,
+                    //     [
+                    //         'id' => $id,
+                    //         'lack' => 0,
+                    //     ]
+                    // );
                     
                 } elseif ($totalQty <= 0) {
 
@@ -452,13 +451,14 @@ class ProductController extends Controller
                             'take' => $qty,
                         ]
                     );
-                    array_push(
-                        $this->set_reminder,
-                        [
-                            'id' => $id,
-                            'lack' => $lack,
-                        ]
-                    );
+
+                    // array_push(
+                    //     $this->set_reminder,
+                    //     [
+                    //         'id' => $id,
+                    //         'lack' => $lack,
+                    //     ]
+                    // );
 
                     
                 }
