@@ -228,7 +228,7 @@ class ProductController extends Controller
         //     $material = $this->WareHouseCollection($product_material->material_id, $product_material->qty);
         // }
 
-        $material = collect($product_materials)->map(fn ($product_material)=>[
+        $material = collect($product_materials)->map(fn ($product_material) => [
             'take' => $this->WareHouseCollection($product_material->material_id, $product_material->qty)
         ]);
 
@@ -253,7 +253,7 @@ class ProductController extends Controller
         foreach ($warehouse_materials as $warehouse_material) {
 
             //agar mavjud bolsa
-            $isExist = collect($this->taken_materials)->contains("id", $warehouse_material->id);
+            $isExist = collect($this->taken_materials)->contains("id", $warehouse_material->id);//true false
 
             //agar bor bolsa
             if ($isExist) {
@@ -268,15 +268,17 @@ class ProductController extends Controller
                     return $taken_material['take'];
                 }, $this->taken_materials));
 
-                foreach ($materialId as $sum) {
-                    $sum;
-                }
+//total 
+//foreach product_materials dan
+//material_id total harbir material_id sum(take)
+//foreach $materialId dan
 
                 if ($totalQty == $totalTaken) {
 
                     array_push($collected_materials, $this->taken_materials);
 
                     break;
+
                 } else {
 
                     $totalQty -= $totalTaken;
@@ -288,6 +290,7 @@ class ProductController extends Controller
                     ]);
 
                     continue;
+
                 }
 
                 //agar total = take summasi
