@@ -332,13 +332,17 @@ class ProductController extends Controller
                                 return $taken_material['quantity'];
                             }, $collected_materials));
 
+        $cost = array_sum(array_map(function ($taken_material) {
+            return $taken_material['quantity']*$taken_material['buy_price'];
+        }, $collected_materials));
+
         $not_enough = $totalQty - $tot;
 
         return [
             'warehouse'=>$collected_materials,
             'lack'=>$not_enough,
-            'exists'=>$isExist
-    
+            'exists'=>$isExist,
+            'cost' => $cost
     ];
     }
 }
