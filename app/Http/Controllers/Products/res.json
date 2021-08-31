@@ -1,70 +1,114 @@
 {
-    "result": [
-        {
-            "product_name": "Koylak",
-            "product_qty": 30,
-            "product_materials": [
-                {
-                    "warehouse_id": 1,
-                    "material_name": "Mato",
-                    "qty": 12,
-                    "price": 1500
-                },
-                {
-                    "warehouse_id": 2,
-                    "material_name": "Mato",
-                    "qty": 12,
-                    "price": 1600
-                },
-                {
-                    "warehouse_id": 5,
-                    "material_name": "Tugma",
-                    "qty": 150,
-                    "price": 300
-                },
-                {
-                    "warehouse_id": 3,
-                    "material_name": "Ip",
-                    "qty": 40,
-                    "price": 500
-                },
-                {
-                    "warehouse_id": 4,
-                    "material_name": "Ip",
-                    "qty": 260,
-                    "price": 550
-                }
-            ]
-        },
-        {
-            "product_name": "Shim",
-            "product_qty": 20,
-            "product_materials": [
-                {
-                    "warehouse_id": 2,
-                    "material_name": "Mato",
-                    "qty": 28,
-                    "price": 1600
-                },
-                {
-                    "warehouse_id": 4,
-                    "material_name": "Ip",
-                    "qty": 40,
-                    "price": 550
-                },
-                {
-                    "warehouse_id": null,
-                    "material_name": "Ip",
-                    "qty": 260,
-                    "price": null
-                },
-                {
-                    "warehouse_id": 6,
-                    "material_name": "Zamok",
-                    "qty": 20,
-                    "price": 2000
-                }
-            ]
+    "result": {
+        "data": {
+            "report_product_materials": {
+                "product": [
+                    {
+                        "product_name": "Computer",
+                        "product_id": 1,
+                        "quantity": 2,
+                        "product_materials": [
+                            {
+                                "material_id": 1,
+                                "material_name": "Plastic",
+                                "totalqty": 8,
+                                "warehouses": [
+                                    {
+                                        "warehouse_materials_id": 1,
+                                        "warehouse_id": 1,
+                                        "material": "Plastic",
+                                        "quantity": 5
+                                    },
+                                    {
+                                        "warehouse_materials_id": 26,
+                                        "warehouse_id": 1,
+                                        "material": "Plastic",
+                                        "quantity": 3
+                                    }
+                                ]
+                            },
+                            {
+                                "material_id": 2,
+                                "material_name": "Microchip",
+                                "totalqty": 6,
+                                "warehouses": [
+                                    {
+                                        "warehouse_materials_id": 2,
+                                        "warehouse_id": 3,
+                                        "material": "Microchip",
+                                        "quantity": 5
+                                    },
+                                    {
+                                        "warehouse_materials_id": 5,
+                                        "warehouse_id": 1,
+                                        "material": "Microchip",
+                                        "quantity": 1
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "product_name": "Phone",
+                        "product_id": 2,
+                        "quantity": 3,
+                        "product_materials": [
+                            {
+                                "material_id": 1,
+                                "material_name": "Plastic",
+                                "totalqty": 3,
+                                "warehouses": [
+                                    {
+                                        "warehouse_materials_id": 1,
+                                        "warehouse_id": 1,
+                                        "material": "Plastic",
+                                        "quantity": 3
+                                    }
+                                ]
+                            },
+                            {
+                                "material_id": 2,
+                                "material_name": "Microchip",
+                                "totalqty": 6,
+                                "warehouses": [
+                                    {
+                                        "warehouse_materials_id": 2,
+                                        "warehouse_id": 3,
+                                        "material": "Microchip",
+                                        "quantity": 5
+                                    },
+                                    {
+                                        "warehouse_materials_id": 5,
+                                        "warehouse_id": 1,
+                                        "material": "Microchip",
+                                        "quantity": 1
+                                    }
+                                ]
+                            },
+                            {
+                                "material_id": 3,
+                                "material_name": "Sim",
+                                "totalqty": 9,
+                                "warehouses": [
+                                    {
+                                        "warehouse_materials_id": 3,
+                                        "warehouse_id": 2,
+                                        "material": "Sim",
+                                        "quantity": 5
+                                    },
+                                    {
+                                        "warehouse_materials_id": 20,
+                                        "warehouse_id": 2,
+                                        "material": "Sim",
+                                        "quantity": 4
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
         }
-    ]
+    },
+    "success": true
 }
