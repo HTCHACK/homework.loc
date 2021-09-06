@@ -22,15 +22,15 @@ Route::prefix('/user')->group(function () {
     
     Route::get('/all', [UserController::class, 'index']);
 
-    Route::apiResource('materials',MaterialController::class);
-    Route::apiResource('products', ProductController::class);
-    Route::apiResource('counter_agencies',CounterAgencyController::class);
-    Route::apiResource('ware_houses',WareHouseController::class);
-    Route::apiResource('buy_material', BuyMaterialController::class);
+    // Route::apiResource('materials',MaterialController::class);
+    // Route::apiResource('products', ProductController::class);
+    // Route::apiResource('counter_agencies',CounterAgencyController::class);
+    // Route::apiResource('ware_houses',WareHouseController::class);
+    // Route::apiResource('buy_material', BuyMaterialController::class);
 
-    Route::get('getItem/{id}', [BuyMaterialController::class, 'getItem']);
-    Route::get('getItemhistory/{id}', [BuyMaterialController::class, 'getItemhistory']);
-    Route::post('buy_material/send', [BuyMaterialController::class, 'send']);
+    // Route::get('getItem/{id}', [BuyMaterialController::class, 'getItem']);
+    // Route::get('getItemhistory/{id}', [BuyMaterialController::class, 'getItemhistory']);
+    // Route::post('buy_material/send', [BuyMaterialController::class, 'send']);
 
 });
 

@@ -24,8 +24,8 @@ class SaleRequest extends FormRequest
     public function rules()
     {
         return [
-            'products.*.product_id' => 'required|numeric',
-            'products.*.quantity' => 'required|numeric',
+            'sales.*.product_id' => 'required|numeric',
+            'sales.*.quantity' => 'required|numeric',
         ];
     }
 }
